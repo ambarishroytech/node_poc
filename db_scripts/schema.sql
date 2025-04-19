@@ -13,8 +13,8 @@ GO
 
 CREATE TABLE Users (
     user_id INT PRIMARY KEY IDENTITY(1,1),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    email NVARCHAR(255) UNIQUE NOT NULL,
+    password_hash NVARCHAR(512) NOT NULL,
     registration_timestamp DATETIME DEFAULT GETDATE(),
     is_active BIT DEFAULT 1 -- To handle user deactivation
 );
@@ -27,7 +27,7 @@ GO
 
 CREATE TABLE RefGroupTypes (
     ref_group_type_id INT PRIMARY KEY IDENTITY(1,1),
-    ref_group_type_name VARCHAR(50) NOT NULL UNIQUE, -- Group type name (e.g., Private, Open)
+    ref_group_type_name NVARCHAR(50) NOT NULL UNIQUE, -- Group type name (e.g., Private, Open)
     is_restricted BIT NOT NULL -- Indicates if the group type is restricted (e.g., Private = 1, Open = 0)
 );
 GO
@@ -46,7 +46,7 @@ GO
 
 CREATE TABLE Groups (
     group_id INT PRIMARY KEY IDENTITY(1,1),
-    group_name VARCHAR(255) NOT NULL,
+    group_name NVARCHAR(255) NOT NULL,
     ref_group_type_id INT NOT NULL, -- Foreign key to RefGroupTypes
     owner_id INT NOT NULL,
     max_members INT,
@@ -80,7 +80,7 @@ GO
 
 CREATE TABLE RefJoinRequestStatuses (
     ref_join_request_status_id INT PRIMARY KEY IDENTITY(1,1),
-    ref_join_request_status_name VARCHAR(50) NOT NULL UNIQUE, -- Status name (e.g., pending, approved, declined)
+    ref_join_request_status_name NVARCHAR(50) NOT NULL UNIQUE, -- Status name (e.g., pending, approved, declined)
     is_default BIT NOT NULL -- Indicates if this is the default status
 );
 GO
@@ -167,8 +167,8 @@ GO
 -- Stored Procedures
 
 CREATE PROCEDURE RegisterUser
-    @Email VARCHAR(255),
-    @PasswordHash VARCHAR(255)
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
@@ -199,8 +199,8 @@ END;
 GO
 
 CREATE PROCEDURE LoginUser
-    @Email VARCHAR(255),
-    @PasswordHash VARCHAR(255)
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
@@ -222,7 +222,7 @@ END;
 GO
 
 CREATE PROCEDURE CreateGroup
-    @GroupName VARCHAR(255),
+    @GroupName NVARCHAR(255),
     @RefGroupTypeId INT,
     @OwnerId INT,
     @MaxMembers INT

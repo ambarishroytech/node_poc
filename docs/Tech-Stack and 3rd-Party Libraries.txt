@@ -21,7 +21,6 @@ bcryptjs: For hashing and verifying passwords.
 @types/bcryptjs: Type definitions for bcryptjs.
 
 4. Database
-typeorm: ORM for working with relational databases, including SQL Server.
 mssql: SQL Server driver for Node.js.
 @types/mssql: Type definitions for mssql.
 
@@ -66,12 +65,10 @@ compression: For compressing HTTP responses.
 express-rate-limit: For rate-limiting API requests.
 @types/express-rate-limit: Type definitions for express-rate-limit.
 
-
 # Install Express and its type definitions
 npm install express
 npm install @types/express --save-dev
 
-npm install typeorm mssql
 npm install @types/mssql --save-dev
 
 npm install jsonwebtoken bcryptjs
@@ -84,9 +81,13 @@ npm install @types/dotenv --save-dev
 
 npm install winston
 npm install @types/winston --save-dev
+npm install winston-daily-rotate-file --save-dev
 
 npm install swagger-ui-express
 npm install @types/swagger-ui-express --save-dev
+
+npm install swagger-jsdoc
+npm install @types/swagger-jsdoc --save-dev
 
 npm install jest ts-jest supertest
 npm install @types/jest --save-dev
@@ -103,3 +104,6 @@ npm install @types/compression --save-dev
 
 npm install express-rate-limit
 npm install @types/express-rate-limit --save-dev
+
+npm install bcrypt
+npm install --save-dev @types/bcrypt

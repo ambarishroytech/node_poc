@@ -1,0 +1,1 @@
+// Provides health check logic.

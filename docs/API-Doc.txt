@@ -1,0 +1,228 @@
+# Group Messaging API Documentation
+
+## Overview
+This document provides a comprehensive guide to the Group Messaging API, including endpoints, request/response formats, headers, and error handling. 
+The API supports user registration, group management, messaging, and more.
+
+---
+
+## Common Headers
+
+### Request Headers
+- `Content-Type: application/`
+- `Authorization: Bearer <JWT_TOKEN>` (if required)
+- `Accept: application/`
+- `Accept-Encoding: gzip, deflate, br`
+- `X-Request-ID: <unique_id>`
+- `X-Forwarded-For: <client_ip>`
+
+### Response Headers
+- `Content-Type: application/`
+- `Content-Encoding: gzip` (if compressed)
+- Security Headers:
+  - `Content-Security-Policy`
+  - `X-Content-Type-Options`
+  - `X-Frame-Options`
+
+---
+
+## API Endpoints
+
+### 1. User Registration API
+- **Endpoint**: `/register`
+- **Verb**: `POST`
+- **Request Headers**: `Content-Type: application/`
+- **Request Body**:
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+
+- **Response (201)**:
+  {
+    "message": "Registration successful. Please log in."
+  }
+
+- **Validation Errors (400)**:
+  {"error": "Email is required."}
+  {"error": "Invalid email format."}
+  {"error": "Password is required."}
+  {"error": "Password must be at least 8 characters long."}
+
+- **Conflict Error (409)**:
+  {"error": "Email address already exists."}
+
+---
+
+### 2. Login API
+- **Endpoint**: `/login`
+- **Verb**: `POST`
+- **Request Headers**: `Content-Type: application/`
+- **Request Body**:
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+
+- **Response (200)**:
+  {
+    "token": "jwt_token_here"
+  }
+
+- **Validation Errors (400)**:
+  {"error": "Email is required."}
+  {"error": "Password is required."}
+
+- **Authentication Error (401)**:
+  {"error": "Invalid credentials."}
+
+---
+
+### 3. Logout API
+- **Endpoint**: `/logout`
+- **Verb**: `POST` or `DELETE`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: `{}`
+
+- **Response (200)**:
+  {
+    "message": "Logged out successfully."
+  }
+
+- **Response (204)**: (Empty)
+- **Authorization Error (401)**:
+  {"error": "Unauthorized."}
+
+---
+
+### 4. Create Group API
+- **Endpoint**: `/groups`
+- **Verb**: `POST`
+- **Request Headers**: `Content-Type: application/`, `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**:
+  {
+    "group_name": "My Group",
+    "group_type": "private",
+    "max_members": 10
+  }
+
+- **Response (201)**:
+  {
+    "group_id": 123
+  }
+
+- **Validation Errors (400)**:
+  {"error": "group_name is required."}
+  {"error": "group_type is required."}
+  {"error": "group_type must be 'private' or 'open'."}
+  {"error": "max_members must be a number."}
+  {"error": "max_members must be at least 2."}
+
+- **Authorization Error (401)**:
+  {"error": "Unauthorized."}
+
+---
+
+### 5. Join Group API
+- **Endpoint**: `/groups/{group_id}/join`
+- **Verb**: `POST`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: `{}`
+
+- **Response (200 - Open Group)**:
+  {
+    "message": "Successfully joined the group."
+  }
+
+- **Response (202 - Private Group)**:
+  {
+    "message": "Join request submitted."
+  }
+
+- **Validation Errors (400)**:
+  {"error": "Already a member of this group."}
+  {"error": "Already requested to join this group."}
+
+- **Forbidden Error (403)**:
+  {"error": "You have been banished from this group."}
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+
+- **Authorization Error (401)**:
+  {"error": "Unauthorized."}
+
+---
+
+### 6. Leave Group API
+- **Endpoint**: `/groups/{group_id}/leave`
+- **Verb**: `DELETE`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: `{}`
+
+- **Response (200)**:
+  {
+    "message": "Successfully left the group."
+  }
+
+- **Not Found Error (404)**:
+  {"error": "Group not found or you are not a member."}
+
+- **Authorization Error (401)**:
+  {"error": "Unauthorized."}
+
+---
+
+### 7. Get Pending Join Requests API
+- **Endpoint**: `/groups/{group_id}/requests`
+- **Verb**: `GET`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: `{}`
+
+- **Response (200)**:
+  [
+    {
+      "request_id": 1,
+      "user_id": 123,
+      "email": "user@example.com",
+      "request_timestamp": "2025-04-19T10:00:00Z"
+    }
+  ]
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+
+- **Authorization Error (403)**:
+  {"error": "You are not the owner of this group."}
+
+---
+
+### 14. Health Check API
+- **Endpoint**: `/health`
+- **Verb**: `GET`
+- **Request Headers**: None
+- **Request Body**: None
+
+- **Response (200)**:
+  {
+    "status": "healthy",
+    "uptime": "2 days, 4 hours, 30 minutes",
+    "timestamp": "2025-04-19T10:00:00Z"
+  }
+
+---
+
+### 15. Get Last Log File API
+- **Endpoint**: `/logs`
+- **Verb**: `GET`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: None
+
+- **Response (200)**:
+  {
+    "log_file": "2025-04-19T10:00:00Z.log",
+    "content": "INFO: Application started...\nERROR: Database connection failed..."
+  }
+
+- **Authorization Error (401)**:
+  {"error": "Unauthorized."}

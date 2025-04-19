@@ -1,0 +1,105 @@
+Type-script: 
+Using TypeScript is highly recommended for this project due to its scalability, type safety, and better developer experience. The APIs described involve complex operations (e.g., authentication, database interactions, and validation), which TypeScript can help manage more effectively.
+
+Third-Party NPM Libraries for TypeScript in Node.js
+Here’s a list of essential libraries you’ll need to incorporate TypeScript into your Node.js project, along with libraries for implementing the described APIs:
+
+1. TypeScript and Related Tools
+typescript: The core TypeScript compiler.
+ts-node: Allows you to run TypeScript directly without compiling it to JavaScript.
+@types/node: Type definitions for Node.js.
+tsconfig-paths: Supports path mapping in tsconfig.json.
+
+2. Web Framework
+express: Web framework for building APIs.
+@types/express: Type definitions for Express.
+
+3. Authentication and Authorization
+jsonwebtoken: For generating and verifying JWT tokens.
+@types/jsonwebtoken: Type definitions for jsonwebtoken.
+bcryptjs: For hashing and verifying passwords.
+@types/bcryptjs: Type definitions for bcryptjs.
+
+4. Database
+typeorm: ORM for working with relational databases, including SQL Server.
+mssql: SQL Server driver for Node.js.
+@types/mssql: Type definitions for mssql.
+
+5. Validation
+class-validator: For validating request bodies and DTOs.
+class-transformer: For transforming and sanitizing objects.
+
+6. Environment Variables
+dotenv: For loading environment variables from .env files.
+@types/dotenv: Type definitions for dotenv.
+
+7. Logging
+winston: For logging application events.
+@types/winston: Type definitions for winston.
+
+8. API Documentation
+swagger-ui-express: For generating and serving Swagger API documentation.
+@types/swagger-ui-express: Type definitions for swagger-ui-express.
+
+9. Testing
+jest: Testing framework.
+ts-jest: TypeScript preprocessor for Jest.
+supertest: For testing HTTP endpoints.
+@types/jest: Type definitions for Jest.
+
+10. Utility Libraries
+lodash: Utility functions for working with objects, arrays, etc.
+@types/lodash: Type definitions for lodash.
+dayjs: For date and time manipulation.
+@types/dayjs: Type definitions for dayjs.
+
+11. Security
+helmet: For setting HTTP security headers.
+cors: For enabling Cross-Origin Resource Sharing.
+@types/cors: Type definitions for cors.
+
+12. Compression
+compression: For compressing HTTP responses.
+@types/compression: Type definitions for compression.
+
+13. Rate Limiting
+express-rate-limit: For rate-limiting API requests.
+@types/express-rate-limit: Type definitions for express-rate-limit.
+
+
+# Install Express and its type definitions
+npm install express
+npm install @types/express --save-dev
+
+npm install typeorm mssql
+npm install @types/mssql --save-dev
+
+npm install jsonwebtoken bcryptjs
+npm install @types/jsonwebtoken @types/bcryptjs --save-dev
+
+npm install class-validator class-transformer
+
+npm install dotenv
+npm install @types/dotenv --save-dev
+
+npm install winston
+npm install @types/winston --save-dev
+
+npm install swagger-ui-express
+npm install @types/swagger-ui-express --save-dev
+
+npm install jest ts-jest supertest
+npm install @types/jest --save-dev
+
+npm install lodash dayjs
+npm install @types/lodash --save-dev
+npm install dayjs --save-dev
+
+npm install helmet cors
+npm install @types/cors --save-dev
+
+npm install compression
+npm install @types/compression --save-dev
+
+npm install express-rate-limit
+npm install @types/express-rate-limit --save-dev

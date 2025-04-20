@@ -3,17 +3,24 @@
 
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+import { SendErrorResponse } from "../utils/response.util";
 
-/**
- * Middleware to validate request bodies against a DTO class.
- * @param dtoClass The DTO class to validate against.
- */
-export const validateDto = (dtoClass: new () => object) => {
-	return async (req: Request, res: Response, next: NextFunction) => {
+// /**
+//  * Middleware to validate request bodies against a DTO class.
+//  * @param dtoClass The DTO class to validate against.
+//  */
+
+export function validateDto(dto: new () => object): RequestHandler {
+	return async (
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> => {
 		try {
+			// Validation logic
 			// Transform plain request body into an instance of the DTO class
-			const dtoInstance = plainToInstance(dtoClass, req.body);
+			const dtoInstance = plainToInstance(dto, req.body);
 
 			// Validate the DTO instance
 			const errors = await validate(dtoInstance);
@@ -24,19 +31,13 @@ export const validateDto = (dtoClass: new () => object) => {
 					Object.values(error.constraints || {}).join(", "),
 				);
 
-				return res.status(400).json({
-					success: false,
-					errors: errorMessages,
-				});
+				SendErrorResponse(res, errorMessages.join("; "), 400);
+				return;
 			}
-
-			// Proceed to the next middleware or route handler
 			next();
 		} catch (error) {
-			return res.status(500).json({
-				success: false,
-				message: "Internal server error during validation.",
-			});
+			SendErrorResponse(res, "Internal server error during validation.", 500);
+			return;
 		}
 	};
-};
+}

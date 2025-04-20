@@ -2,6 +2,10 @@
 import express from "express";
 import { SendMessageDto } from "../../dtos/message.dto";
 import { validateDto } from "../../middlewares/validation.middleware";
+import {
+	SendErrorResponse,
+	SendSuccessResponse,
+} from "../../utils/response.util";
 
 const router = express.Router();
 
@@ -10,7 +14,13 @@ router.post(
 	validateDto(SendMessageDto),
 	(req, res) => {
 		// Handle sending message logic here
-		res.status(201).json({ message: "Message sent successfully." });
+
+		SendSuccessResponse(
+			res,
+			{ message: "Message sent successfully." },
+			"Message sent successfully.",
+			201,
+		);
 	},
 );
 

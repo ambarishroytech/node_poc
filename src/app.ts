@@ -15,6 +15,7 @@ import messageRoutesV1 from "./routes/v1/message.routes";
 
 import { verifyToken } from "./middlewares/auth.middleware"; // Import verifyToken middleware
 import { errorMiddleware } from "./middlewares/error.middleware";
+import { SendErrorResponse } from "./utils/response.util";
 
 const app: Application = express();
 
@@ -55,7 +56,7 @@ app.use("/api/v1/groups/:groupId/messages", messageRoutesV1);
 
 // Catch unsupported API versions
 app.use("/api/:version", (req: Request, res: Response, next: NextFunction) => {
-	res.status(404).json({ error: "API version not supported" });
+	SendErrorResponse(res, "API version not supported", 404);
 	next();
 });
 

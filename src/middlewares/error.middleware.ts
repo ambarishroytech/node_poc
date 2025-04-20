@@ -3,6 +3,7 @@
 
 import type { NextFunction, Request, Response } from "express";
 import logger from "../config/logger";
+import { SendErrorResponse } from "../utils/response.util";
 
 // Custom error interface
 interface CustomError extends Error {
@@ -24,12 +25,6 @@ export const errorMiddleware = (
 	const status = err.status || 500;
 	const message = err.message || "Internal Server Error";
 
-	// Send standardized error response
-	res.status(status).json({
-		success: false,
-		error: {
-			message,
-			status,
-		},
-	});
+	// Use SendErrorResponse to send the error response
+	SendErrorResponse(res, message, status);
 };

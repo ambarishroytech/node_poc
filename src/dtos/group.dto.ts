@@ -29,17 +29,6 @@ export class CreateGroupResponseDto {
 	group_id!: number;
 }
 
-// DTO for Join Group Request
-export class JoinGroupRequestDto {
-	@IsInt({ message: "Group ID must be an integer." })
-	@Min(1, { message: "Group ID must be greater than 0." })
-	group_id!: number; // ID of the group to join
-
-	@IsInt({ message: "User ID must be an integer." })
-	@Min(1, { message: "User ID must be greater than 0." })
-	user_id!: number; // ID of the user requesting to join
-}
-
 // DTO for Joining a Group
 export class JoinGroupResponseDto {
 	message!: string;

@@ -7,7 +7,7 @@ import bcrypt from "bcrypt";
  * @param saltRounds - The number of salt rounds (default: 10).
  * @returns The hashed password.
  */
-export async function hashPassword(
+export async function HashPassword(
 	password: string,
 	saltRounds = 10,
 ): Promise<string> {
@@ -20,7 +20,7 @@ export async function hashPassword(
  * @param hashedPassword - The hashed password to compare against.
  * @returns True if the password matches, false otherwise.
  */
-export async function verifyPassword(
+export async function VerifyHashedPassword(
 	password: string,
 	hashedPassword: string,
 ): Promise<boolean> {

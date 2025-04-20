@@ -1,0 +1,20 @@
+1. Add pagination related fields in the retrieve message request dto - Done
+2. jwtUtil has problems - Done
+3. usage of response utils - Done
+4. usage of validate middleware - Done
+5. Add sample methods with validators in routes - Done
+6. Add health routes end point - Done
+
+7. Refactor all routes-services-controllers as per the sample auth.
+
+8. Write service classes which will call SPs
+9. Write controller classes
+10. Complete the integration in the route file
+11. Test one endpoint and check the log
+
+12. Complete all the remaining endpoints
+13. Test all endpoints
+
+14. Analyze real-time web-socket based endpoints
+15. Implement real-time web-socket based endpoints
+16. Test real-time web-socket based endpoints

@@ -1,5 +1,6 @@
 // Handles user registration, login, and logout.
 import type { Request, Response } from "express";
+import type { LoginResponseDto } from "../dtos/auth.dto";
 import { AuthService } from "../services/auth.service";
 import { SendErrorResponse, SendSuccessResponse } from "../utils/response.util";
 
@@ -21,8 +22,11 @@ export class AuthController {
 	async login(req: Request, res: Response): Promise<void> {
 		try {
 			const { email, password } = req.body;
-			const token = await authService.loginUser(email, password);
-			SendSuccessResponse(res, { token }, "Login successful.");
+			const loginResponse: LoginResponseDto = await authService.loginUser(
+				email,
+				password,
+			);
+			SendSuccessResponse(res, { loginResponse }, "Login successful.");
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : "An unknown error occurred.";

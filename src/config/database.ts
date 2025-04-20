@@ -7,6 +7,10 @@ import logger from "./logger";
 // Load environment variables from .env file
 dotenv.config();
 
+export interface DatabaseError extends Error {
+	number?: number;
+}
+
 // Database configuration
 const dbConfig: SqlConfig = {
 	// user: process.env.DB_USERNAME || "",

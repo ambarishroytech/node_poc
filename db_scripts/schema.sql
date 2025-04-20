@@ -15,8 +15,7 @@ CREATE TABLE Users (
     user_id INT PRIMARY KEY IDENTITY(1,1),
     email NVARCHAR(255) UNIQUE NOT NULL,
     password_hash NVARCHAR(512) NOT NULL,
-    registration_timestamp DATETIME DEFAULT GETDATE(),
-    is_active BIT DEFAULT 1 -- To handle user deactivation
+    registration_timestamp DATETIME DEFAULT GETDATE()
 );
 GO
 
@@ -166,7 +165,7 @@ GO
 ---------------------------
 -- Stored Procedures
 
-CREATE PROCEDURE RegisterUser
+CREATE PROCEDURE SP_RegisterUser
     @Email NVARCHAR(255),
     @PasswordHash NVARCHAR(255)
 AS
@@ -198,7 +197,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE LoginUser
+CREATE PROCEDURE SP_LoginUser
     @Email NVARCHAR(255),
     @PasswordHash NVARCHAR(255)
 AS
@@ -206,12 +205,18 @@ BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
+        -- Check if the email already exists
+        IF NOT EXISTS (SELECT 1 FROM Users WHERE email = @Email)
+        BEGIN
+            THROW 50001, 'User is not registered.', 1;
+        END
+
         IF NOT EXISTS (SELECT 1 FROM Users WHERE email = @Email AND password_hash = @PasswordHash)
         BEGIN
             THROW 50002, 'Invalid credentials.', 1;
         END
 
-        SELECT user_id, email, is_active
+        SELECT user_id, email
         FROM Users
         WHERE email = @Email;
     END TRY
@@ -221,7 +226,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE CreateGroup
+CREATE PROCEDURE SP_CreateGroup
     @GroupName NVARCHAR(255),
     @RefGroupTypeId INT,
     @OwnerId INT,
@@ -248,7 +253,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE JoinGroup
+CREATE PROCEDURE SP_JoinGroup
     @GroupId INT,
     @UserId INT
 AS
@@ -286,7 +291,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE UpdateJoinRequest
+CREATE PROCEDURE SP_UpdateJoinRequest
     @RequestId INT,
     @RefJoinRequestStatusId INT
 AS
@@ -325,7 +330,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE GetPendingJoinRequests
+CREATE PROCEDURE SP_GetPendingJoinRequests
     @GroupId INT
 AS
 BEGIN
@@ -351,7 +356,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE LeaveGroup
+CREATE PROCEDURE SP_LeaveGroup
     @GroupId INT,
     @UserId INT
 AS
@@ -373,7 +378,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE BanishMember
+CREATE PROCEDURE SP_BanishMember
     @GroupId INT,
     @UserId INT
 AS
@@ -398,7 +403,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE TransferOwnership
+CREATE PROCEDURE SP_TransferOwnership
     @GroupId INT,
     @NewOwnerId INT
 AS
@@ -426,7 +431,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE DeleteGroup
+CREATE PROCEDURE SP_DeleteGroup
     @GroupId INT
 AS
 BEGIN
@@ -452,7 +457,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE SendMessage
+CREATE PROCEDURE SP_SendMessage
     @GroupId INT,
     @SenderId INT,
     @ContentEncrypted VARBINARY(MAX)
@@ -478,7 +483,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE RetrieveMessages
+CREATE PROCEDURE SP_RetrieveMessages
     @GroupId INT,
     @PageNumber INT = NULL, -- Optional parameter for pagination
     @PageSize INT = NULL    -- Optional parameter for pagination
@@ -515,7 +520,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE GetRefGroupTypes
+CREATE PROCEDURE SP_GetRefGroupTypes
 AS
 BEGIN
     BEGIN TRY
@@ -533,7 +538,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE GetRefJoinRequestStatuses
+CREATE PROCEDURE SP_GetRefJoinRequestStatuses
 AS
 BEGIN
     BEGIN TRY

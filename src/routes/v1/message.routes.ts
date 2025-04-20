@@ -1,27 +1,16 @@
 // Routes for messages (e.g., /groups/{group_id}/messages).
 import express from "express";
+import { MessageController } from "../../controllers/message.controller";
 import { SendMessageDto } from "../../dtos/message.dto";
 import { validateDto } from "../../middlewares/validation.middleware";
-import {
-	SendErrorResponse,
-	SendSuccessResponse,
-} from "../../utils/response.util";
 
 const router = express.Router();
+const messageController = new MessageController();
 
 router.post(
-	"/groups/:group_id/messages",
+	"/send",
 	validateDto(SendMessageDto),
-	(req, res) => {
-		// Handle sending message logic here
-
-		SendSuccessResponse(
-			res,
-			{ message: "Message sent successfully." },
-			"Message sent successfully.",
-			201,
-		);
-	},
+	messageController.sendMessage,
 );
 
 export default router;

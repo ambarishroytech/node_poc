@@ -4,17 +4,21 @@
 4. usage of validate middleware - Done
 5. Add sample methods with validators in routes - Done
 6. Add health routes end point - Done
+7. Refactor all routes-services-controllers as per the sample auth.- Done
 
-7. Refactor all routes-services-controllers as per the sample auth.
+8. Complete first 5 APIs fully and test from db and postman, swagger.
 
-8. Write service classes which will call SPs
-9. Write controller classes
-10. Complete the integration in the route file
-11. Test one endpoint and check the log
+9. Carefully re-define all group related api definitions and dtos
+10. carefully re-define all message retrieval related api definitions and dtos
 
-12. Complete all the remaining endpoints
-13. Test all endpoints
+11. Write service classes which will call SPs
+12. Write controller classes
+13. Complete the integration in the route file
+14. Test one endpoint and check the log
 
-14. Analyze real-time web-socket based endpoints
-15. Implement real-time web-socket based endpoints
-16. Test real-time web-socket based endpoints
+15. Complete all the remaining endpoints
+16. Test all endpoints
+
+17. Analyze real-time web-socket based endpoints
+18. Implement real-time web-socket based endpoints
+19. Test real-time web-socket based endpoints

@@ -8,6 +8,10 @@ export class SendMessageDto {
 	@Min(1, { message: "Sender ID must be greater than 0." })
 	sender_id!: number; // ID of the sender
 
+	@IsInt({ message: "Group ID must be an integer." })
+	@Min(1, { message: "Group ID must be greater than 0." })
+	group_id!: number; // ID of the Group
+
 	@IsString({ message: "Message content is required." })
 	content_encrypted!: string; // Encrypted message content (base64 encoded)
 }

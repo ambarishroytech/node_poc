@@ -78,31 +78,14 @@ The API supports user registration, group management, messaging, and more.
 
 ---
 
-### 3. Logout API
-- **Endpoint**: `/logout`
-- **Verb**: `POST` or `DELETE`
-- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
-- **Request Body**: `{}`
-
-- **Response (200)**:
-  {
-    "message": "Logged out successfully."
-  }
-
-- **Response (204)**: (Empty)
-- **Authorization Error (401)**:
-  {"error": "Unauthorized."}
-
----
-
-### 4. Create Group API
-- **Endpoint**: `/groups`
+### 3. Create Group API
+- **Endpoint**: `/groups/create`
 - **Verb**: `POST`
 - **Request Headers**: `Content-Type: application/`, `Authorization: Bearer <JWT_TOKEN>`
 - **Request Body**:
   {
     "group_name": "My Group",
-    "group_type": "private",
+    "group_type_id": 1,
     "max_members": 10
   }
 
@@ -123,18 +106,23 @@ The API supports user registration, group management, messaging, and more.
 
 ---
 
-### 5. Join Group API
-- **Endpoint**: `/groups/{group_id}/join`
+### 4. Join Group API
+- **Endpoint**: `/groups/join`
 - **Verb**: `POST`
 - **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
-- **Request Body**: `{}`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"user_id": 1
+	}
 
 - **Response (200 - Open Group)**:
   {
     "message": "Successfully joined the group."
   }
 
-- **Response (202 - Private Group)**:
+  A banished user to submit a new join request (requires owner approval).
+- **Response (202 - Private Group OR a banished member)**:
   {
     "message": "Join request submitted."
   }
@@ -154,11 +142,15 @@ The API supports user registration, group management, messaging, and more.
 
 ---
 
-### 6. Leave Group API
-- **Endpoint**: `/groups/{group_id}/leave`
-- **Verb**: `DELETE`
+### 5. Leave Group API
+- **Endpoint**: `/groups/leave`
+- **Verb**: `POST`
 - **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
-- **Request Body**: `{}`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"user_id": 1
+	}
 
 - **Response (200)**:
   {
@@ -173,11 +165,14 @@ The API supports user registration, group management, messaging, and more.
 
 ---
 
-### 7. Get Pending Join Requests API
-- **Endpoint**: `/groups/{group_id}/requests`
-- **Verb**: `GET`
+### 6. Get Pending Join Requests API
+- **Endpoint**: `/groups/getJoinRequests`
+- **Verb**: `POST`
 - **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
-- **Request Body**: `{}`
+- **Request Body**: 
+	{
+		"group_id": 5
+	}
 
 - **Response (200)**:
   [
@@ -194,10 +189,120 @@ The API supports user registration, group management, messaging, and more.
 
 - **Authorization Error (403)**:
   {"error": "You are not the owner of this group."}
+  
+	If a user leaves a private group, they must wait 48 hours before they can request to join that group again.  
+	{"error": "You have to wait for 48 hrs."}
+  
 
+### 7. Approve/Decline Join Requests API
+- **Endpoint**: `/groups/approveJoinRequests`
+- **Verb**: `POST`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"request_id": 1,
+		"is_approved": false,
+		"comments": "Not from a approved country."
+	}
+
+- **Response (200)**:
+  [
+    {
+      "message": "Rejected as not from a approved country."
+    }
+  ]
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+  {"error": "Request not found."}
+
+- **Authorization Error (403)**:
+  {"error": "You are not the owner of this group."}  
+  
+- **Already Approved/Rejected Error (403)**:
+  {"error": "Request is already approved or Rejected."}   
+
+### 8. Transfer Ownership API  
+- **Endpoint**: `/groups/transferOwnership`
+- **Verb**: `POST`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"owner_id": 1,
+		"new_owner_id": 3
+	}
+
+- **Response (200)**:
+  [
+    {}
+  ]
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+  {"error": "Owner not found."}
+  {"error": "New Owner not found."}
+
+- **Authorization Error (403)**:
+  {"error": "You are not the owner of this group."}  
+  
+- **Already Approved/Rejected Error (403)**:
+  {"error": "Owner and New Owner Cannot be the same."}  
+  
+### 9. Delete Group API  
+- **Endpoint**: `/groups/delete`
+- **Verb**: `POST`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"owner_id": 1
+	}
+
+- **Response (200)**:
+  [
+    {}
+  ]
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+  {"error": "Owner not found."}
+
+- **Authorization Error (403)**:
+  {"error": "You are not the owner of this group."}  
+  
+- **Validation Error (400)**:
+  {"error": "Other group members are present, cannot delete this group"}    
+  
+### 10. Banish a Member API  
+- **Endpoint**: `/groups/banishment`
+- **Verb**: `POST`
+- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Request Body**: 
+	{
+		"group_id": 5,
+		"member_id": 6,
+		"comments": "Due to wrong words, you have been banished"
+	}
+
+- **Response (200)**:
+  [
+    {}
+  ]
+
+- **Not Found Error (404)**:
+  {"error": "Group not found."}
+  {"error": "Member not found."}
+
+- **Authorization Error (403)**:
+  {"error": "You are not the member of this group."}  
+  
+- **Validation Error (400)**:
+  {"error": "You are already banished"}      
 ---
 
-### 14. Health Check API
+### 11. Health Check API
 - **Endpoint**: `/health`
 - **Verb**: `GET`
 - **Request Headers**: None
@@ -212,29 +317,15 @@ The API supports user registration, group management, messaging, and more.
 
 ---
 
-### 15. Get Last Log File API
-- **Endpoint**: `/logs`
-- **Verb**: `GET`
-- **Request Headers**: `Authorization: Bearer <JWT_TOKEN>`
-- **Request Body**: None
-
-- **Response (200)**:
-  {
-    "log_file": "2025-04-19T10:00:00Z.log",
-    "content": "INFO: Application started...\nERROR: Database connection failed..."
-  }
-
-- **Authorization Error (401)**:
-  {"error": "Unauthorized."}
-
-16. Send Message API
-Endpoint: /groups/{group_id}/messages
+### 12. Send Message API
+Endpoint: /messages/send
 Verb: POST
 Request Headers:
 Authorization: Bearer <JWT_TOKEN>
 Content-Type: application/json
 Request Body:
 {
+  "group_id": 123,
   "sender_id": 123,
   "content_encrypted": "base64_encoded_string"
 }
@@ -246,27 +337,28 @@ Request Body:
 }
 
 Validation Errors (400):
+{"error": "Group ID is required."}
 {"error": "Sender ID is required."}
 {"error": "Message content is required."}
 
 Not Found Error (404):
 {"error": "Group not found."}
-
-Authorization Error (401):
-{"error": "Unauthorized."}
+{"error": "Sender not found."}
 
 Forbidden Error (403):
 {"error": "You are not a member of this group."}
 
 
-17. Retrieve Messages API
-Endpoint: /groups/{group_id}/messages
-Verb: GET
+### 13. Retrieve Messages API
+Endpoint: /messages/getMessages
+Verb: POST
 Request Headers:
 Authorization: Bearer <JWT_TOKEN>
-Query Parameters:
-page (optional): The page number for pagination (default: 1).
-limit (optional): The number of messages per page (default: 10).
+Request:
+{
+	current_page: 1,
+	number_of_records: 10
+}
 
 Response (200):
 {

@@ -24,11 +24,6 @@ export class CreateGroupDto {
 	max_members!: number;
 }
 
-// DTO for Group Creation Response
-export class CreateGroupResponseDto {
-	group_id!: number;
-}
-
 // DTO for Joining a Group
 export class JoinGroupResponseDto {
 	message!: string;

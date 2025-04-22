@@ -64,6 +64,7 @@ GO
 CREATE TABLE GroupMembers (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
+    is_owner BIT DEFAULT 0, -- Indicates if the user is the owner of the group
     join_timestamp DATETIME DEFAULT GETDATE(),
     leave_timestamp DATETIME NULL, -- To track when a user leaves a private group for cool down
     PRIMARY KEY (group_id, user_id),
@@ -102,6 +103,7 @@ CREATE TABLE JoinRequests (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
     request_timestamp DATETIME DEFAULT GETDATE(),
+    is_banished BIT DEFAULT 0, -- Indicates if the user is banished from the group
     ref_join_request_status_id INT NOT NULL, -- Foreign key to RefJoinRequestStatuses
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
@@ -120,6 +122,7 @@ CREATE TABLE Banishments (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
     banishment_timestamp DATETIME DEFAULT GETDATE(),
+    comments NVARCHAR(255) NOT NULL,
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
     UNIQUE (group_id, user_id) -- Ensure a user can only be banished once from a group at a time
@@ -233,9 +236,13 @@ BEGIN
         INSERT INTO Groups (group_name, ref_group_type_id, owner_id, max_members)
         VALUES (@GroupName, @RefGroupTypeId, @OwnerId, @MaxMembers);
 
-        COMMIT TRANSACTION;
+        DECLARE @GroupId INT;
+        SELECT @GroupId = SCOPE_IDENTITY();
 
-        SELECT SCOPE_IDENTITY() AS GroupId;
+        INSERT INTO GroupMembers (group_id, user_id, is_owner)
+        VALUES (@GroupId, @OwnerId, 1);
+
+        COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION;
@@ -399,6 +406,7 @@ GO
 
 CREATE PROCEDURE SP_TransferOwnership
     @GroupId INT,
+    @OwnerId INT,
     @NewOwnerId INT
 AS
 BEGIN
@@ -413,6 +421,10 @@ BEGIN
         UPDATE Groups
         SET owner_id = @NewOwnerId
         WHERE group_id = @GroupId;
+
+        UPDATE GroupMembers
+        SET user_id = @NewOwnerId
+        WHERE group_id = @GroupId AND user_id = @OwnerId;
 
         COMMIT TRANSACTION;
     END TRY
@@ -464,8 +476,6 @@ BEGIN
         VALUES (@GroupId, @SenderId, @ContentEncrypted);
 
         COMMIT TRANSACTION;
-
-        SELECT SCOPE_IDENTITY() AS MessageId;
     END TRY
     BEGIN CATCH
         ROLLBACK TRANSACTION;

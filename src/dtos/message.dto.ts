@@ -13,7 +13,8 @@ export class SendMessageDto {
 	group_id!: number; // ID of the Group
 
 	@IsString({ message: "Message content is required." })
-	content_encrypted!: string; // Encrypted message content (base64 encoded)
+	@MinLength(1, { message: "Message content cannot be empty." })
+	content!: string; // Changed from content_encrypted to content (plain text)
 }
 
 // DTO for the response of sending a message
@@ -22,7 +23,11 @@ export class SendMessageResponseDto {
 	message!: string; // Success message
 }
 
-export class PaginationRequestDto {
+export class RetrievedMessageRequestDto {
+	@IsInt({ message: "Group ID must be an integer." })
+	@Min(1, { message: "Group ID must be greater than 0." })
+	group_id!: number; // ID of the Group
+
 	@IsInt({ message: "Page number must be an integer." })
 	@Min(1, { message: "Page number must be greater than 0." })
 	page_number!: number;
@@ -33,22 +38,9 @@ export class PaginationRequestDto {
 }
 
 // DTO for a single message in the retrieve messages response
-export class RetrievedMessageDto {
+export class RetrievedMessageResponseDto {
 	message_id!: number; // ID of the message
 	sender_id!: number; // ID of the sender
-	content_encrypted!: string; // Encrypted message content (base64 encoded)
+	content!: string; // Changed from content_encrypted to content (plain text)
 	timestamp!: string; // Timestamp of when the message was sent (ISO 8601 format)
-}
-
-// DTO for the pagination metadata in the retrieve messages response
-export class PaginationDto {
-	current_page!: number; // Current page number
-	total_pages!: number; // Total number of pages
-	total_messages!: number; // Total number of messages
-}
-
-// DTO for the response of retrieving messages
-export class RetrieveMessagesResponseDto {
-	messages!: RetrievedMessageDto[]; // Array of retrieved messages
-	pagination!: PaginationDto; // Pagination metadata
 }

@@ -1,3 +1,5 @@
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
 Type-script: 
 Using TypeScript is highly recommended for this project due to its scalability, type safety, and better developer experience. The APIs described involve complex operations (e.g., authentication, database interactions, and validation), which TypeScript can help manage more effectively.
 
@@ -107,3 +109,7 @@ npm install @types/express-rate-limit --save-dev
 
 npm install bcrypt
 npm install --save-dev @types/bcrypt
+
+npm install --save-dev crypto
+
+npm install --save-dev jest @types/jest ts-jest

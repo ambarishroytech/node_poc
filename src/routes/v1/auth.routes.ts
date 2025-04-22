@@ -7,6 +7,7 @@ const router = express.Router();
 const authController = new AuthController();
 
 router.post("/register", validateDto(RegisterUserDto), authController.register);
+
 router.post("/login", validateDto(LoginUserDto), authController.login);
 
 export default router;

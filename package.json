@@ -6,6 +6,9 @@
 		"doc": "docs"
 	},
 	"scripts": {
+		"start": "ts-node src/server.ts",
+		"build": "tsc",
+		"start:prod": "node dist/server.js",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
 	"keywords": [],
@@ -34,6 +37,7 @@
 		"winston-daily-rotate-file": "^5.0.0"
 	},
 	"dependencies": {
+		"assignment": "file:",
 		"bcrypt": "^5.1.1",
 		"bcryptjs": "^3.0.2",
 		"class-transformer": "^0.5.1",

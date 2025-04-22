@@ -167,7 +167,7 @@ GO
 
 CREATE PROCEDURE SP_RegisterUser
     @Email NVARCHAR(255),
-    @PasswordHash NVARCHAR(255)
+    @PasswordHash NVARCHAR(512)
 AS
 BEGIN
     BEGIN TRY
@@ -197,9 +197,8 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE SP_LoginUser
-    @Email NVARCHAR(255),
-    @PasswordHash NVARCHAR(255)
+CREATE PROCEDURE SP_GetUser
+    @Email NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
@@ -211,12 +210,7 @@ BEGIN
             THROW 50001, 'User is not registered.', 1;
         END
 
-        IF NOT EXISTS (SELECT 1 FROM Users WHERE email = @Email AND password_hash = @PasswordHash)
-        BEGIN
-            THROW 50002, 'Invalid credentials.', 1;
-        END
-
-        SELECT user_id, email
+        SELECT user_id, email, password_hash
         FROM Users
         WHERE email = @Email;
     END TRY

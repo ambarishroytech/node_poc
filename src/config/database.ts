@@ -13,59 +13,43 @@ export interface DatabaseError extends Error {
 
 // Database configuration
 const dbConfig: SqlConfig = {
-	// user: process.env.DB_USERNAME || "",
-	// password: process.env.DB_PASSWORD || "",
-	server: process.env.DB_HOST || "",
-	port: Number.parseInt(process.env.DB_PORT || "1433"),
+	server: process.env.DB_HOST || "", // Should be just the server name, e.g., ASUS-ROG-STRIX
+	//port: process.env.DB_PORT as Number || 1433,// Add the port number here
 	database: process.env.DB_NAME || "",
 	options: {
-		encrypt: true, // For secure connections
-		trustServerCertificate: true, // Required for self-signed certificates
+		encrypt: false, // Temporarily disable encryption for local dev troubleshooting
+		trustServerCertificate: true, // Keep this true when encrypt is false or for self-signed certs
 	},
 	authentication: {
-		type: "ntlm", // Use NTLM for Windows Authentication
+		type: "default", // Use default for SQL Server Authentication
 		options: {
-			domain: process.env.DB_DOMAIN || "", // Optional: Specify the domain if required
-			userName: process.env.DB_USER || "", // Optional: Specify the Windows username if needed
-			password: process.env.DB_PASSWORD || "", // Optional: Specify the password if needed
+			userName: process.env.DB_USER || "", // Specify the database username
+			password: process.env.DB_PASSWORD || "", // Specify the database password
 		},
 	},
 	pool: {
-		max: 100, // Maximum number of connections in the pool
+		max: 10, // Maximum number of connections in the pool
 		min: 1, // Minimum number of connections in the pool
 		idleTimeoutMillis: 30000, // Time (in ms) before an idle connection is closed
 	},
+	connectionTimeout: 30000, // Increase connection timeout to 30 seconds
 };
 
-// Create a connection pool
-let pool: ConnectionPool | null = null;
-
 export const getDbConnection = async (): Promise<ConnectionPool> => {
-	if (!pool) {
-		try {
-			pool = await sql.connect(dbConfig);
-			logger.info("Database connection established successfully.");
-		} catch (error) {
-			logger.error("Error during database connection initialization:", {
-				error,
-			});
-			throw error;
-		}
+	try {
+		const pool = await new sql.ConnectionPool(dbConfig).connect();
+		logger.info("Database connection established successfully.");
+		return pool;
+	} catch (error) {
+		// Log the specific error details
+		logger.error("Error during database connection initialization:", {
+			message: error instanceof Error ? error.message : String(error),
+			code: (error as any)?.code, // Attempt to get error code
+			originalError: (error as any)?.originalError, // Log original error if available
+			error, // Log the full error object
+		});
+		throw error;
 	}
-	return pool;
 };
 
 export default getDbConnection;
-
-// Example usage of the database connection in a repository file
-////////////////////////////////////////////////////////////////////////////
-// import getDbConnection from "../config/database";
-
-// export const getUserByEmail = async (email: string): Promise<any> => {
-//   const pool = await getDbConnection();
-//   const result = await pool
-//     .request()
-//     .input("Email", email) // Pass parameters to the stored procedure
-//     .execute("GetUserByEmail"); // Call the stored procedure
-//   return result.recordset[0]; // Return the first record
-// };

@@ -33,13 +33,11 @@ export function SendSuccessResponse<T>(
 export function SendErrorResponse(
 	res: Response,
 	message = "An error occurred",
-	statusCode = 500,
-	errors: unknown[] = [],
+	statusCode = 500
 ): void {
 	logger.error(message);
 	res.status(statusCode).json({
 		success: false,
-		message,
-		errors,
+		message
 	});
 }

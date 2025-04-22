@@ -22,3 +22,8 @@
 17. Analyze real-time web-socket based endpoints
 18. Implement real-time web-socket based endpoints
 19. Test real-time web-socket based endpoints
+
+
+------------------
+npm run build
+npm run start

@@ -19,13 +19,16 @@
 15. Complete all the remaining endpoints - Done
 16. Test all endpoints - Done
 17. Return the actual error message, but always its returning the same error. fix the error middleware - Done
+18. Create unit tests - Done
+19. Swagger - Done
 
-18. Analyze real-time web-socket based endpoints
-19. Implement real-time web-socket based endpoints
-20. Test real-time web-socket based endpoints
-21. Create unit tests
+20. Analyze real-time web-socket based endpoints
+21. Implement real-time web-socket based endpoints
+22. Test real-time web-socket based endpoints
+
 
 
 ------------------
 npm run build
 npm run start
+npx jest --verbose

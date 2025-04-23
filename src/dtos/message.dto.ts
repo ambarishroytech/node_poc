@@ -4,10 +4,6 @@
 // DTO for sending a message
 import { IsInt, IsString, MaxLength, Min, MinLength } from "class-validator";
 export class SendMessageDto {
-	@IsInt({ message: "Sender ID must be an integer." })
-	@Min(1, { message: "Sender ID must be greater than 0." })
-	sender_id!: number; // ID of the sender
-
 	@IsInt({ message: "Group ID must be an integer." })
 	@Min(1, { message: "Group ID must be greater than 0." })
 	group_id!: number; // ID of the Group

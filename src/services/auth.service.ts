@@ -21,6 +21,7 @@ export class AuthService {
 			dbUtils.handleDatabaseError(error, {
 				50001: "Email address already exists.",
 			});
+			throw error;
 		}
 	}
 

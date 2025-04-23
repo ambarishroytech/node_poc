@@ -15,7 +15,7 @@ CREATE TABLE Users (
     user_id INT PRIMARY KEY IDENTITY(1,1),
     email NVARCHAR(255) UNIQUE NOT NULL,
     password_hash NVARCHAR(512) NOT NULL,
-    registration_timestamp DATETIME DEFAULT GETDATE()
+    registration_timestamp DATETIME DEFAULT GETUTCDATE()
 );
 GO
 
@@ -49,8 +49,8 @@ CREATE TABLE Groups (
     ref_group_type_id INT NOT NULL, -- Foreign key to RefGroupTypes
     owner_id INT NOT NULL,
     max_members INT,
-    creation_timestamp DATETIME DEFAULT GETDATE(),
-    last_updated DATETIME DEFAULT GETDATE(), -- Track changes
+    creation_timestamp DATETIME DEFAULT GETUTCDATE(),
+    last_updated DATETIME DEFAULT GETUTCDATE(), -- Track changes
     FOREIGN KEY (ref_group_type_id) REFERENCES RefGroupTypes(ref_group_type_id),
     FOREIGN KEY (owner_id) REFERENCES Users(user_id)
 );
@@ -65,8 +65,22 @@ CREATE TABLE GroupMembers (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
     is_owner BIT DEFAULT 0, -- Indicates if the user is the owner of the group
-    join_timestamp DATETIME DEFAULT GETDATE(),
-    leave_timestamp DATETIME NULL, -- To track when a user leaves a private group for cool down
+    join_timestamp DATETIME DEFAULT GETUTCDATE(),
+    PRIMARY KEY (group_id, user_id),
+    FOREIGN KEY (group_id) REFERENCES Groups(group_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+GO
+
+-- Drop and recreate the GroupMembers table
+IF OBJECT_ID('GroupLeaveHistory ', 'U') IS NOT NULL
+    DROP TABLE GroupLeaveHistory ;
+GO
+
+CREATE TABLE GroupLeaveHistory  (
+    group_id INT NOT NULL,
+    user_id INT NOT NULL,
+    leave_timestamp DATETIME DEFAULT GETUTCDATE(), -- To track when a user leaves a private group for cool down
     PRIMARY KEY (group_id, user_id),
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
@@ -102,9 +116,10 @@ CREATE TABLE JoinRequests (
     request_id INT PRIMARY KEY IDENTITY(1,1),
     group_id INT NOT NULL,
     user_id INT NOT NULL,
-    request_timestamp DATETIME DEFAULT GETDATE(),
-    is_banished BIT DEFAULT 0, -- Indicates if the user is banished from the group
+    request_timestamp DATETIME DEFAULT GETUTCDATE(),
     ref_join_request_status_id INT NOT NULL, -- Foreign key to RefJoinRequestStatuses
+	status_change_timestamp DATETIME DEFAULT GETUTCDATE(),
+	comments NVARCHAR(255) NOT NULL,
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
     FOREIGN KEY (ref_join_request_status_id) REFERENCES RefJoinRequestStatuses(ref_join_request_status_id),
@@ -121,7 +136,7 @@ CREATE TABLE Banishments (
     banishment_id INT PRIMARY KEY IDENTITY(1,1),
     group_id INT NOT NULL,
     user_id INT NOT NULL,
-    banishment_timestamp DATETIME DEFAULT GETDATE(),
+    banishment_timestamp DATETIME DEFAULT GETUTCDATE(),
     comments NVARCHAR(255) NOT NULL,
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
@@ -139,8 +154,8 @@ CREATE TABLE Messages (
     group_id INT NOT NULL,
     sender_id INT NOT NULL,
     content_encrypted VARBINARY(MAX) NOT NULL, -- Store encrypted message content
-    timestamp DATETIME DEFAULT GETDATE(),
-    last_updated DATETIME DEFAULT GETDATE(), -- Track changes
+    timestamp DATETIME DEFAULT GETUTCDATE(),
+    last_updated DATETIME DEFAULT GETUTCDATE(), -- Track changes
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (sender_id) REFERENCES Users(user_id)
 );
@@ -262,6 +277,25 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+		DECLARE @MaxMembers INT;
+        DECLARE @CurrentMembers INT;
+
+		-- Check the current number of members in the group
+        SELECT @CurrentMembers = COUNT(*)
+        FROM GroupMembers
+        WHERE group_id = @GroupId;
+
+        -- If the current number of members is equal to or greater than max_members, throw an error
+        IF @CurrentMembers >= @MaxMembers
+        BEGIN
+            THROW 50001, 'The group has already reached its maximum number of members.', 1;
+        END;
+
+		IF EXISTS (SELECT 1 FROM GroupLeaveHistory WHERE group_id = @GroupId AND user_id = @UserId AND DATEDIFF(HOUR, leave_timestamp, GETUTCDATE()) < 48)
+        BEGIN
+            THROW 50002, 'User must wait 48 hours before requesting to join the group again.', 1;
+        END;
+
         DECLARE @IsRestricted BIT;
 
         SELECT @IsRestricted = is_restricted
@@ -269,13 +303,43 @@ BEGIN
         INNER JOIN Groups ON Groups.ref_group_type_id = RefGroupTypes.ref_group_type_id
         WHERE Groups.group_id = @GroupId;
 
+		-- Check from GroupLeaveHistory against group_id, user_id if the leave_timestamp is 48hrs old or not, 
+			--if found and not yet crossed 48 hrs then throw an error
+
         IF @IsRestricted = 1
         BEGIN
+            -- Get the status ID for 'pending'
+            DECLARE @PendingStatusId INT;
+            SELECT @PendingStatusId = ref_join_request_status_id
+            FROM RefJoinRequestStatuses
+            WHERE ref_join_request_status_name = 'pending';
+
+            -- Check if a join request already exists for this user and group
+            IF EXISTS (SELECT 1 FROM JoinRequests WHERE group_id = @GroupId AND user_id = @UserId AND ref_join_request_status_id = @PendingStatusId)
+            BEGIN
+                -- Use RAISERROR for informative error messages
+                THROW 50003, 'A join request for this group and user already exists.', 1;
+            END;
+
             INSERT INTO JoinRequests (group_id, user_id)
             VALUES (@GroupId, @UserId);
         END
         ELSE
         BEGIN
+            -- Check if the user is already a member of the group
+            IF EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @UserId)
+            BEGIN
+                -- Use RAISERROR for informative error messages
+                THROW 50004, 'User is already a member of this group.', 1;
+            END;
+
+            -- Check if the user was banished or not
+            IF EXISTS (SELECT 1 FROM Banishments WHERE group_id = @GroupId AND user_id = @UserId)
+            BEGIN
+                -- Use RAISERROR for informative error messages
+                THROW 50005, 'As a banished user you have to raise a join request.', 1;
+            END;
+
             INSERT INTO GroupMembers (group_id, user_id)
             VALUES (@GroupId, @UserId);
         END
@@ -294,16 +358,35 @@ GO
 
 CREATE PROCEDURE SP_UpdateJoinRequest
     @RequestId INT,
-    @RefJoinRequestStatusId INT
+    @RefJoinRequestStatusId INT,
+	@Comments NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+		-- Get the status ID for 'pending'
+        DECLARE @PendingStatusId INT;
+        DECLARE @ApprovedStatusId INT;
+
+        SELECT @PendingStatusId = ref_join_request_status_id
+        FROM RefJoinRequestStatuses
+        WHERE ref_join_request_status_name = 'pending';
+
+        SELECT @ApprovedStatusId = ref_join_request_status_id
+        FROM RefJoinRequestStatuses
+        WHERE ref_join_request_status_name = 'approved';
+
         -- Check if the join request exists
         IF NOT EXISTS (SELECT 1 FROM JoinRequests WHERE request_id = @RequestId)
         BEGIN
             THROW 50003, 'Join request not found.', 1;
+        END
+
+		-- Check if the join request status is pending or not
+        IF NOT EXISTS (SELECT 1 FROM JoinRequests WHERE request_id = @RequestId AND ref_join_request_status_id = @PendingStatusId)
+        BEGIN
+            THROW 50004, 'Join request status has already been changed.', 1;
         END
 
         -- Check if the provided status ID exists in RefJoinRequestStatuses
@@ -314,8 +397,22 @@ BEGIN
 
         -- Update the join request status
         UPDATE JoinRequests
-        SET ref_join_request_status_id = @RefJoinRequestStatusId
+        SET ref_join_request_status_id = @RefJoinRequestStatusId, comments = @Comments, status_change_timestamp = GETUTCDATE()
         WHERE request_id = @RequestId;
+
+        -- Final work
+        IF @RefJoinRequestStatusId = @ApprovedStatusId
+        BEGIN
+
+            DECLARE @GroupId INT;
+            DECLARE @UserId INT;
+            SELECT @GroupId = group_id, @UserId=user_id FROM JoinRequests WHERE request_id = @RequestId
+
+            INSERT INTO GroupMembers (group_id, user_id)
+            VALUES (@GroupId, @UserId);
+
+            DELETE Banishments WHERE group_id = @GroupId AND user_id = @UserId;
+        END
 
         -- Commit the transaction
         COMMIT TRANSACTION;
@@ -368,6 +465,8 @@ BEGIN
         DELETE FROM GroupMembers
         WHERE group_id = @GroupId AND user_id = @UserId;
 
+		INSERT INTO GroupLeaveHistory (group_id, user_id) VALUES (@GroupId, @UserId);
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -381,7 +480,8 @@ GO
 
 CREATE PROCEDURE SP_BanishMember
     @GroupId INT,
-    @UserId INT
+    @UserId INT,
+	@Comments NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
@@ -390,8 +490,8 @@ BEGIN
         DELETE FROM GroupMembers
         WHERE group_id = @GroupId AND user_id = @UserId;
 
-        INSERT INTO Banishments (group_id, user_id)
-        VALUES (@GroupId, @UserId);
+        INSERT INTO Banishments (group_id, user_id, comments)
+        VALUES (@GroupId, @UserId, @Comments);
 
         COMMIT TRANSACTION;
     END TRY
@@ -471,6 +571,8 @@ AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
+
+        
 
         INSERT INTO Messages (group_id, sender_id, content_encrypted)
         VALUES (@GroupId, @SenderId, @ContentEncrypted);

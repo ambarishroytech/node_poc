@@ -14,18 +14,18 @@ const dbUtils = new DbUtils(); // Instantiate DbUtils
 // Handles sending and retrieving messages.
 export class MessageService {
 	async sendMessage(
-		messageData: SendMessageDto,
+		messageData: SendMessageDto, senderId: number
 	): Promise<SendMessageResponseDto> {
 		try {
 			const encryptedContentBuffer = encryptAES128(messageData.content);
 			await dbUtils.executeStoredProcedure<void>("SP_SendMessage", {
 				GroupId: messageData.group_id,
-				SenderId: messageData.sender_id, // Use senderId from auth context
+				SenderId: senderId, // Use senderId from auth context
 				ContentEncrypted: encryptedContentBuffer,
 			});
 
 			logger.info(
-				`Message sent by user ${messageData.sender_id} to group ${messageData.group_id}`,
+				`Message sent by user ${senderId} to group ${messageData.group_id}`,
 			);
 
 			const response = new SendMessageResponseDto();

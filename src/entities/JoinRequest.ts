@@ -6,4 +6,5 @@ export class JoinRequest {
 	is_banished!: boolean; // Mandatory field, not null
 	request_timestamp!: Date; // Default: GETDATE()
 	ref_join_request_status_id!: number; // Foreign key to RefJoinRequestStatuses
+	comments?: string;
 }

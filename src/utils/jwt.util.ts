@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 // Functions for generating and verifying JWT tokens.
 import jwt from "jsonwebtoken";
+import logger from "../config/logger";
 
 dotenv.config();
 

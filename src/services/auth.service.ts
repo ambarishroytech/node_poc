@@ -3,7 +3,7 @@ import type { LoginResponseDto } from "../dtos/auth.dto";
 import type { User } from "../entities/User";
 import { HashPassword, VerifyHashedPassword } from "../utils/bcrypt.util";
 import { DbUtils } from "../utils/db.utils";
-import { GenerateToken } from "../utils/jwt.util";
+import { GenerateToken, type JwtPayload } from "../utils/jwt.util";
 
 const dbUtils = new DbUtils();
 
@@ -27,22 +27,30 @@ export class AuthService {
 
 	async loginUser(email: string, password: string): Promise<LoginResponseDto> {
 		try {
-			const user = await dbUtils.executeStoredProcedure<User>("SP_GetUser", {
-				Email: email
+			const users = await dbUtils.executeStoredProcedure<User[]>("SP_GetUser", {
+				Email: email,
 			});
 
-			const isValidPassword = VerifyHashedPassword(password, user.password_hash);
-			if(!isValidPassword){
-				throw new Error("Invalid Credentials.")
+			const isValidPassword = VerifyHashedPassword(
+				password,
+				users[0].password_hash,
+			);
+			if (!isValidPassword) {
+				throw new Error("Invalid Credentials.");
 			}
 
-			const token = GenerateToken({ user_id: user.user_id, email: user.email });
+			const tokenPayload: JwtPayload = {
+				user_id: users[0].user_id,
+				email: users[0].email,
+			};
+
+			const token = GenerateToken(tokenPayload);
 			logger.info(`User (${email}) logged in successfully.`);
 
 			return { token };
 		} catch (error: unknown) {
 			dbUtils.handleDatabaseError(error, {
-				50001: "User is not registered."
+				50001: "User is not registered.",
 			});
 			throw error;
 		}

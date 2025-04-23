@@ -32,7 +32,9 @@ export class MessageService {
 			response.message = "Message sent successfully.";
 			return response;
 		} catch (error: unknown) {
-			logger.error("Error in sendMessage service:", error);
+			dbUtils.handleDatabaseError(error, {
+				50001: "Invalid Group or Sender.",
+			});
 			throw error;
 		}
 	}

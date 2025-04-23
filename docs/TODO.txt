@@ -16,13 +16,14 @@
 13. Complete the integration in the route file- Done
 14. Test one endpoint and check the log- Done
 
-15. Complete all the remaining endpoints
-16. Test all endpoints
+15. Complete all the remaining endpoints - Done
+16. Test all endpoints - Done
+17. Return the actual error message, but always its returning the same error. fix the error middleware - Done
 
-17. Analyze real-time web-socket based endpoints
-18. Implement real-time web-socket based endpoints
-19. Test real-time web-socket based endpoints
-20. Create unit tests
+18. Analyze real-time web-socket based endpoints
+19. Implement real-time web-socket based endpoints
+20. Test real-time web-socket based endpoints
+21. Create unit tests
 
 
 ------------------

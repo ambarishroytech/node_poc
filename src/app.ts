@@ -50,8 +50,8 @@ app.use("/api/v1/health", healthRoutesV1);
 
 // Protected Routes (Require Authentication)
 app.use("/api/v1", verifyToken); // Apply verifyToken middleware globally for all protected v1 routes
-app.use("/api/v1/groups", groupRoutesV1);
-app.use("/api/v1/messages", messageRoutesV1);
+app.use("/api/v1/group", groupRoutesV1);
+app.use("/api/v1/message", messageRoutesV1);
 
 // Catch unsupported API versions
 app.use("/api/:version", (req: Request, res: Response, next: NextFunction) => {

@@ -36,6 +36,10 @@ export class BanishmentRequestDto {
 
 // DTO for Updating a Join Request
 export class UpdateJoinGroupRequestDto {
+	@IsInt({ message: "Group ID must be an integer." })
+	@Min(1, { message: "Group ID must be greater than 0." })
+	group_id!: number;
+	
 	@IsInt({ message: "Request ID must be an integer." })
 	@Min(1, { message: "Request ID must be greater than 0." })
 	request_id!: number; // ID of the join request to update

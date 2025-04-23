@@ -37,6 +37,10 @@ export class GroupController {
         try {
             const userId: number = (req.user as JwtPayload).user_id;
 			const requestDto: GroupIdRequestDto = req.body;
+            
+            // Validate if the user is the owner of the group before fetching pending requests
+            await groupService.ValidateGroupOwner(requestDto.group_id, userId);
+
             const pendingRequests = await groupService.getPendingJoinRequests(requestDto);
             SendSuccessResponse(res, pendingRequests, "Pending join requests retrieved successfully.", 200);
         } catch (error) {
@@ -47,7 +51,12 @@ export class GroupController {
 
     async updateJoinRequest(req: Request, res: Response): Promise<void> {
         try {
+            const userId: number = (req.user as JwtPayload).user_id;
             const requestDto: UpdateJoinGroupRequestDto = req.body;
+
+            // Validate if the user is the owner of the group before fetching pending requests
+            await groupService.ValidateGroupOwner(requestDto.group_id, userId);
+
             await groupService.updateJoinRequest(requestDto);
             SendSuccessResponse(res, null, "Join request updated successfully.", 200);
         } catch (error) {
@@ -70,7 +79,12 @@ export class GroupController {
 
     async banishMember(req: Request, res: Response): Promise<void> {
         try {
+            const userId: number = (req.user as JwtPayload).user_id;
             const requestDto: BanishmentRequestDto = req.body;
+
+            // Validate if the user is the owner of the group before fetching pending requests
+            await groupService.ValidateGroupOwner(requestDto.group_id, userId);
+
             await groupService.banishMember(requestDto);
             SendSuccessResponse(res, null, "Member banished successfully.", 200);
         } catch (error) {
@@ -81,7 +95,12 @@ export class GroupController {
 
     async deleteGroup(req: Request, res: Response): Promise<void> {
         try {
+            const userId: number = (req.user as JwtPayload).user_id;
             const requestDto: GroupIdRequestDto = req.body;
+
+            // Validate if the user is the owner of the group before fetching pending requests
+            await groupService.ValidateGroupOwner(requestDto.group_id, userId);
+
             await groupService.deleteGroup(requestDto);
             SendSuccessResponse(res, null, "Group deleted successfully.", 200);
         } catch (error) {
@@ -94,6 +113,10 @@ export class GroupController {
         try {
             const ownerId: number = (req.user as JwtPayload).user_id;
             const requestDto: TransferOwnershipRequestDto = req.body;
+
+            // Validate if the user is the owner of the group before fetching pending requests
+            await groupService.ValidateGroupOwner(requestDto.group_id, ownerId);
+
             await groupService.transferOwnership(requestDto, ownerId);
             SendSuccessResponse(res, null, "Ownership transferred successfully.", 200);
         } catch (error) {

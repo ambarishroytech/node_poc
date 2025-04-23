@@ -51,7 +51,7 @@ export class DbUtils {
 		}
 
 		logger.error("Database error:", { error });
-		throw new Error("An error occurred during the operation.");
+		throw new Error(`An error occurred during the operation. ${error}`);
 	}
 
 	// Private helper methods

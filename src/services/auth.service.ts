@@ -27,7 +27,7 @@ export class AuthService {
 
 	async loginUser(email: string, password: string): Promise<LoginResponseDto> {
 		try {
-			const users = await dbUtils.executeStoredProcedure<User[]>("SP_GetUser", {
+			const users = await dbUtils.executeStoredProcedure<User[]>("SP_GetUserForLogin", {
 				Email: email,
 			});
 
@@ -51,6 +51,23 @@ export class AuthService {
 		} catch (error: unknown) {
 			dbUtils.handleDatabaseError(error, {
 				50001: "User is not registered.",
+			});
+			throw error;
+		}
+	}
+
+	async getUser(user_id: number): Promise<User> {
+		try {
+			const users = await dbUtils.executeStoredProcedure<User[]>("SP_GetUser", {
+				UserId: user_id,
+			});
+
+			logger.info(`User (id: ${user_id}) found.`);
+
+			return users[0];
+		} catch (error: unknown) {
+			dbUtils.handleDatabaseError(error, {
+				50001: "Invalid User Id.",
 			});
 			throw error;
 		}

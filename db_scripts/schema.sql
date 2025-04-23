@@ -64,7 +64,6 @@ GO
 CREATE TABLE GroupMembers (
     group_id INT NOT NULL,
     user_id INT NOT NULL,
-    is_owner BIT DEFAULT 0, -- Indicates if the user is the owner of the group
     join_timestamp DATETIME DEFAULT GETUTCDATE(),
     PRIMARY KEY (group_id, user_id),
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
@@ -119,11 +118,11 @@ CREATE TABLE JoinRequests (
     request_timestamp DATETIME DEFAULT GETUTCDATE(),
     ref_join_request_status_id INT NOT NULL, -- Foreign key to RefJoinRequestStatuses
 	status_change_timestamp DATETIME DEFAULT GETUTCDATE(),
-	comments NVARCHAR(255) NOT NULL,
+	comments NVARCHAR(255) NULL,
     FOREIGN KEY (group_id) REFERENCES Groups(group_id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
     FOREIGN KEY (ref_join_request_status_id) REFERENCES RefJoinRequestStatuses(ref_join_request_status_id),
-    UNIQUE (group_id, user_id) -- Prevent duplicate join requests for the same group by the same user
+    UNIQUE (group_id, user_id, ref_join_request_status_id) -- Prevent duplicate join requests for the same group by the same user with same status
 );
 GO
 
@@ -215,14 +214,13 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE SP_GetUser
+CREATE PROCEDURE SP_GetUserForLogin
     @Email NVARCHAR(255)
 AS
 BEGIN
     BEGIN TRY
         SET NOCOUNT ON;
 
-        -- Check if the email already exists
         IF NOT EXISTS (SELECT 1 FROM Users WHERE email = @Email)
         BEGIN
             THROW 50001, 'User is not registered.', 1;
@@ -231,6 +229,28 @@ BEGIN
         SELECT user_id, email, password_hash
         FROM Users
         WHERE email = @Email;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE PROCEDURE SP_GetUser
+    @UserId INT
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        IF NOT EXISTS (SELECT 1 FROM Users WHERE user_id = @UserId)
+        BEGIN
+            THROW 50001, 'Invalid User Id.', 1;
+        END
+
+        SELECT user_id, email
+        FROM Users
+        WHERE user_id = @UserId;
     END TRY
     BEGIN CATCH
         THROW;
@@ -254,8 +274,8 @@ BEGIN
         DECLARE @GroupId INT;
         SELECT @GroupId = SCOPE_IDENTITY();
 
-        INSERT INTO GroupMembers (group_id, user_id, is_owner)
-        VALUES (@GroupId, @OwnerId, 1);
+        INSERT INTO GroupMembers (group_id, user_id)
+        VALUES (@GroupId, @OwnerId);
 
         COMMIT TRANSACTION;
     END TRY
@@ -265,6 +285,28 @@ BEGIN
         -- Use RAISERROR for dynamic error messages
         DECLARE @ErrorMessage NVARCHAR(4000) = 'Error occurred during group creation: ' + ERROR_MESSAGE();
         RAISERROR (@ErrorMessage, 16, 1);
+    END CATCH
+END;
+GO
+
+CREATE PROCEDURE SP_GetGroup
+    @GroupId INT
+AS
+BEGIN
+    BEGIN TRY
+        SET NOCOUNT ON;
+
+        IF NOT EXISTS (SELECT 1 FROM Groups WHERE group_id = @GroupId)
+        BEGIN
+            THROW 50001, 'Invalid Group Id.', 1;
+        END
+
+        SELECT group_id, group_name, ref_group_type_id, owner_id, max_members
+        FROM Groups
+        WHERE group_id = @GroupId;
+    END TRY
+    BEGIN CATCH
+        THROW;
     END CATCH
 END;
 GO
@@ -303,8 +345,11 @@ BEGIN
         INNER JOIN Groups ON Groups.ref_group_type_id = RefGroupTypes.ref_group_type_id
         WHERE Groups.group_id = @GroupId;
 
-		-- Check from GroupLeaveHistory against group_id, user_id if the leave_timestamp is 48hrs old or not, 
-			--if found and not yet crossed 48 hrs then throw an error
+		-- Check if the user was banished or not
+        IF EXISTS (SELECT 1 FROM Banishments WHERE group_id = @GroupId AND user_id = @UserId)
+        BEGIN
+            SET @IsRestricted = 1; -- Treat banished users as restricted
+        END;
 
         IF @IsRestricted = 1
         BEGIN
@@ -321,8 +366,8 @@ BEGIN
                 THROW 50003, 'A join request for this group and user already exists.', 1;
             END;
 
-            INSERT INTO JoinRequests (group_id, user_id)
-            VALUES (@GroupId, @UserId);
+            INSERT INTO JoinRequests (group_id, user_id, ref_join_request_status_id)
+            VALUES (@GroupId, @UserId, @PendingStatusId);
         END
         ELSE
         BEGIN
@@ -331,13 +376,6 @@ BEGIN
             BEGIN
                 -- Use RAISERROR for informative error messages
                 THROW 50004, 'User is already a member of this group.', 1;
-            END;
-
-            -- Check if the user was banished or not
-            IF EXISTS (SELECT 1 FROM Banishments WHERE group_id = @GroupId AND user_id = @UserId)
-            BEGIN
-                -- Use RAISERROR for informative error messages
-                THROW 50005, 'As a banished user you have to raise a join request.', 1;
             END;
 
             INSERT INTO GroupMembers (group_id, user_id)
@@ -357,6 +395,7 @@ END;
 GO
 
 CREATE PROCEDURE SP_UpdateJoinRequest
+    @GroupId INT,
     @RequestId INT,
     @RefJoinRequestStatusId INT,
 	@Comments NVARCHAR(255)
@@ -378,9 +417,9 @@ BEGIN
         WHERE ref_join_request_status_name = 'approved';
 
         -- Check if the join request exists
-        IF NOT EXISTS (SELECT 1 FROM JoinRequests WHERE request_id = @RequestId)
+        IF NOT EXISTS (SELECT 1 FROM JoinRequests WHERE request_id = @RequestId AND group_id = @GroupId)
         BEGIN
-            THROW 50003, 'Join request not found.', 1;
+            THROW 50003, 'Invalid Join request.', 1;
         END
 
 		-- Check if the join request status is pending or not
@@ -404,9 +443,8 @@ BEGIN
         IF @RefJoinRequestStatusId = @ApprovedStatusId
         BEGIN
 
-            DECLARE @GroupId INT;
             DECLARE @UserId INT;
-            SELECT @GroupId = group_id, @UserId=user_id FROM JoinRequests WHERE request_id = @RequestId
+            SELECT @UserId=user_id FROM JoinRequests WHERE request_id = @RequestId
 
             INSERT INTO GroupMembers (group_id, user_id)
             VALUES (@GroupId, @UserId);
@@ -462,6 +500,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        IF NOT EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @UserId)
+        BEGIN
+            -- Use RAISERROR for informative error messages
+            THROW 50001, 'User is not a member of this group.', 1;
+        END;
+
         DELETE FROM GroupMembers
         WHERE group_id = @GroupId AND user_id = @UserId;
 
@@ -486,6 +530,12 @@ AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
+
+        IF NOT EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @UserId)
+        BEGIN
+            -- Use RAISERROR for informative error messages
+            THROW 50001, 'User is not a member of this group.', 1;
+        END;
 
         DELETE FROM GroupMembers
         WHERE group_id = @GroupId AND user_id = @UserId;
@@ -521,10 +571,6 @@ BEGIN
         UPDATE Groups
         SET owner_id = @NewOwnerId
         WHERE group_id = @GroupId;
-
-        UPDATE GroupMembers
-        SET user_id = @NewOwnerId
-        WHERE group_id = @GroupId AND user_id = @OwnerId;
 
         COMMIT TRANSACTION;
     END TRY
@@ -572,7 +618,10 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        
+        IF EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @SenderId)
+        BEGIN
+            THROW 50001, 'Invalid Group or Sender.', 1;
+        END
 
         INSERT INTO Messages (group_id, sender_id, content_encrypted)
         VALUES (@GroupId, @SenderId, @ContentEncrypted);

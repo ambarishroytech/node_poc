@@ -1,5 +1,6 @@
 import logger from "../config/logger"; // Import logger
 import type { CreateGroupDto, PendingJoinRequestResponseDto, UpdateJoinGroupRequestDto, TransferOwnershipRequestDto, GroupIdRequestDto, BanishmentRequestDto } from "../dtos/group.dto";
+import { Group } from "../entities/Group";
 import { DbUtils } from "../utils/db.utils"; // Import DbUtils
 
 const dbUtils = new DbUtils(); // Instantiate DbUtils
@@ -23,6 +24,29 @@ export class GroupService {
 			logger.info("Group created successfully.");
 		} catch (error: unknown) {
 			logger.error("Error in createGroup service:", error);
+			throw error;
+		}
+	}
+
+    async ValidateGroupOwner(groupId: number, userId: number): Promise<void> {
+		try {
+			// Call the stored procedure to create the group and add the owner as a member
+			const groups = await dbUtils.executeStoredProcedure<Group[]>("SP_GetGroup", {
+				GroupId: groupId,
+			});
+
+			logger.info(`Group id='${groupId}' found.`);
+            const groupOwnerId = groups[0].owner_id;
+
+			if (groupOwnerId !== userId)
+            {
+                logger.error(`User ${userId} is not the owner of group ${groupId}.`);
+                throw new Error("User is not the owner of the group.");
+            }
+		} catch (error: unknown) {
+			dbUtils.handleDatabaseError(error, {
+				50001: "Invalid Group Id."
+			});
 			throw error;
 		}
 	}
@@ -62,6 +86,7 @@ export class GroupService {
 	async updateJoinRequest(request: UpdateJoinGroupRequestDto): Promise<void> {
         try {
             await dbUtils.executeStoredProcedure<void>("SP_UpdateJoinRequest", {
+                GroupId: request.group_id,
                 RequestId: request.request_id,
                 RefJoinRequestStatusId: request.ref_join_request_status_id,
                 Comments: request.comments,
@@ -87,7 +112,9 @@ export class GroupService {
 
             logger.info(`User ${userId} left group ${request.group_id}.`);
         } catch (error: unknown) {
-            logger.error("Error in leaveGroup service:", error);
+            dbUtils.handleDatabaseError(error, {
+				50001: "User is not a member of this group."
+			});
             throw error;
         }
     }
@@ -102,7 +129,9 @@ export class GroupService {
 
             logger.info(`User ${request.user_id} was banished from group ${request.group_id}.`);
         } catch (error: unknown) {
-            logger.error("Error in banishMember service:", error);
+            dbUtils.handleDatabaseError(error, {
+				50001: "User is not a member of this group."
+			});
             throw error;
         }
     }

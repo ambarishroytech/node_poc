@@ -15,8 +15,15 @@ export class SendMessageDto {
 
 // DTO for the response of sending a message
 export class SendMessageResponseDto {
-	message_id!: number; // ID of the sent message
 	message!: string; // Success message
+	AckData!: MessageAckDataDto;
+}
+
+export class MessageAckDataDto {
+	group_id!: string;
+	content!: string;
+	timestamp!: string;
+	delivered!: boolean;
 }
 
 export class RetrievedMessageRequestDto {

@@ -117,3 +117,6 @@ npm install --save-dev jest ts-jest @types/jest @types/node
 npm install @types/supertest --save-dev
 
 npx ts-jest config:init
+
+npm install socket.io
+npm install @types/socket.io --save-dev

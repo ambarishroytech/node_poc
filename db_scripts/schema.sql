@@ -618,7 +618,7 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        IF EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @SenderId)
+        IF NOT EXISTS (SELECT 1 FROM GroupMembers WHERE group_id = @GroupId AND user_id = @SenderId)
         BEGIN
             THROW 50001, 'Invalid Group or Sender.', 1;
         END

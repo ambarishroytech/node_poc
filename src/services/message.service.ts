@@ -6,6 +6,7 @@ import {
 	SendMessageResponseDto,
 } from "../dtos/message.dto";
 import type { Message } from "../entities/Message"; // Assuming Message entity exists for typing
+import { io } from "../server";
 import { decryptAES128, encryptAES128 } from "../utils/crypto.util";
 import { DbUtils } from "../utils/db.utils"; // Import DbUtils
 
@@ -14,7 +15,8 @@ const dbUtils = new DbUtils(); // Instantiate DbUtils
 // Handles sending and retrieving messages.
 export class MessageService {
 	async sendMessage(
-		messageData: SendMessageDto, senderId: number
+		messageData: SendMessageDto,
+		senderId: number,
 	): Promise<SendMessageResponseDto> {
 		try {
 			const encryptedContentBuffer = encryptAES128(messageData.content);
@@ -30,6 +32,19 @@ export class MessageService {
 
 			const response = new SendMessageResponseDto();
 			response.message = "Message sent successfully.";
+			response.AckData = {
+				group_id: messageData.group_id.toString(),
+				content: messageData.content,
+				timestamp: new Date().toISOString(), // Use current timestamp
+				delivered: true, // Assuming the message is delivered immediately
+			};
+
+			// Emit to all clients in the group
+			io.to(`group_${messageData.group_id}`).emit(
+				"newMessage",
+				response.AckData,
+			);
+
 			return response;
 		} catch (error: unknown) {
 			dbUtils.handleDatabaseError(error, {

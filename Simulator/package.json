@@ -1,0 +1,16 @@
+{
+  "name": "node-rest-console-app",
+  "version": "1.0.0",
+  "description": "A simple Node.js console application to consume a REST API and log the output using Winston.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "socket.io-client": "^4.8.1",
+    "winston": "^3.3.3"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -76,7 +76,7 @@ This project is a Node.js backend for a secure group messaging application. It s
      ```
 
 4. **Set up the database:**
-   - Create a database using your preferred SQL server.
+   - Create a SQL server database.
    - Run the SQL script in `db_scripts/schema.sql` to create the required tables and stored procedures.
 
 5. **(Optional) Configure logging:**

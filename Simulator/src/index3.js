@@ -1,14 +1,8 @@
 const { io } = require("socket.io-client");
 const chalk = require("chalk").default;
 
-// Map group IDs to chalk color functions
-const groupColors = {
-	1: chalk.blue,
-	2: chalk.green,
-	3: chalk.magenta,
-	// Add more as needed
-};
-
+const myGroupId = 3;
+const color = chalk.magenta;
 const colorDefault = chalk.yellow;
 const colorError = chalk.red;
 
@@ -24,35 +18,48 @@ socket.on("connect_error", (err) => {
 	console.log(colorError("Socket connection failed:", err.message));
 });
 
-// Join all groups the user is a member of
-const userGroups = [1, 2, 3]; // Example: user is in groups 1, 2, and 3
-for (const groupId of userGroups) {
-	const color = groupColors[groupId] || chalk.white;
-	socket.emit("joinGroup", groupId);
-	console.log(color(`Joined group ${groupId}`));
-}
+socket.emit("joinGroup", myGroupId);
+console.log(color(`Joined group ${myGroupId}`));
 
 // Store messages by group
-const groupMessages = {};
+const groupMessages = [];
 
 // Listen for new messages
 socket.on("newMessage", (data) => {
-	const groupId = data.group_id;
-	const color = groupColors[groupId] || chalk.white;
-	if (!groupMessages[groupId]) {
-		groupMessages[groupId] = [];
-	}
-	groupMessages[groupId].push(data);
-
 	console.log(
-		color(`Received new message in group ${groupId}: ${data.content}`),
-	);
-	console.log(
-		color(
-			`Message count for group ${groupId}: ${groupMessages[groupId].length}`,
-		),
+		color(`Received new message: ${data.content}`),
 	);
 });
+
+// // Join all groups the user is a member of
+// const userGroups = [1, 2, 3]; // Example: user is in groups 1, 2, and 3
+// for (const groupId of userGroups) {
+// 	const color = groupColors[groupId] || chalk.white;
+// 	socket.emit("joinGroup", groupId);
+// 	console.log(color(`Joined group ${groupId}`));
+// }
+
+// // Store messages by group
+// const groupMessages = {};
+
+// // Listen for new messages
+// socket.on("newMessage", (data) => {
+// 	const groupId = data.group_id;
+// 	const color = groupColors[groupId] || chalk.white;
+// 	if (!groupMessages[groupId]) {
+// 		groupMessages[groupId] = [];
+// 	}
+// 	groupMessages[groupId].push(data);
+
+// 	console.log(
+// 		color(`Received new message in group ${groupId}: ${data.content}`),
+// 	);
+// 	console.log(
+// 		color(
+// 			`Message count for group ${groupId}: ${groupMessages[groupId].length}`,
+// 		),
+// 	);
+// });
 
 // // Function to send a message to a specific group
 // function sendMessageToGroup(groupId, content, senderId) {

@@ -22,9 +22,13 @@
 18. Create unit tests - Done
 19. Swagger - Done
 
-20. Analyze real-time web-socket based endpoints
-21. Implement real-time web-socket based endpoints
-22. Test real-time web-socket based endpoints
+20. Add unit tests using Jest - Done
+21. Run and pass all tests.
+
+22. Analyze real-time web-socket based endpoints
+23. Implement real-time web-socket based endpoints
+24. Create a node.js app as a client of this  - Done
+25. Test real-time web-socket based endpoints
 
 
 

@@ -8,8 +8,8 @@ import logger from "./config/logger";
 import { createServer } from "node:http";
 import { Server as SocketIOServer } from "socket.io";
 
-import type { SendMessageDto } from "./dtos/message.dto";
-import { MessageService } from "./services/message.service";
+// import type { SendMessageDto } from "./dtos/message.dto";
+// import { MessageService } from "./services/message.service";
 
 // Create HTTP server and bind socket.io
 const httpServer = createServer(app);
@@ -19,31 +19,35 @@ const io = new SocketIOServer(httpServer, {
 
 // Listen for client connections
 io.on("connection", (socket) => {
-	logger.info("A client connected:", socket.id);
+	// Listen for joinGroup event from client
+	socket.on("joinGroup", (groupId) => {
+		socket.join(`group_${groupId}`);
+		logger.info(`Socket ${socket.id} joined group ${groupId}`);
+	});
 
 	// Listen for realTimeChat event from client
-	socket.on(
-		"realTimeChat",
-		async (data: SendMessageDto & { senderId: number }) => {
-			try {
-				logger.info(`Received message from client: ${JSON.stringify(data)}`);
-				// Save the message using your service
-				const messageService = new MessageService();
-				const response = await messageService.sendMessage(data, data.senderId);
+	// socket.on(
+	// 	"realTimeChat",
+	// 	async (data: SendMessageDto & { senderId: number }) => {
+	// 		try {
+	// 			logger.info(`Received message from client: ${JSON.stringify(data)}`);
+	// 			// Save the message using your service
+	// 			const messageService = new MessageService();
+	// 			const response = await messageService.sendMessage(data, data.senderId);
 
-				// Send ack to sender
-				socket.emit("messageAck", { status: "ok", ...response.AckData });
-				logger.info(
-					`Sent acknowledgement to the sender: ${JSON.stringify(response.AckData)}`,
-				);
-			} catch (error) {
-				const errorMessage =
-					error instanceof Error ? error.message : "An unknown error occurred";
-				socket.emit("messageAck", { status: "error", error: errorMessage });
-				logger.error(errorMessage);
-			}
-		},
-	);
+	// 			// Send ack to sender
+	// 			socket.emit("messageAck", { status: "ok", ...response.AckData });
+	// 			logger.info(
+	// 				`Sent acknowledgement to the sender: ${JSON.stringify(response.AckData)}`,
+	// 			);
+	// 		} catch (error) {
+	// 			const errorMessage =
+	// 				error instanceof Error ? error.message : "An unknown error occurred";
+	// 			socket.emit("messageAck", { status: "error", error: errorMessage });
+	// 			logger.error(errorMessage);
+	// 		}
+	// 	},
+	// );
 });
 
 // Make io accessible in your app (for use in controllers/services)

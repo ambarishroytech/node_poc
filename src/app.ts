@@ -4,6 +4,7 @@ import cors from "cors";
 // Initializes the Express app, middleware, and routes.
 import express, { type Application } from "express";
 import type { NextFunction, Request, Response } from "express";
+import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import logger from "./config/logger";
 import { setupSwagger } from "./config/swagger"; // Import setupSwagger
@@ -19,6 +20,19 @@ import { SendErrorResponse } from "./utils/response.util";
 
 const app: Application = express();
 
+/**
+ * Enforce HTTPS in production.
+ * Redirects HTTP requests to HTTPS.
+ */
+if (process.env.NODE_ENV === "production") {
+	app.use((req: Request, res: Response, next: NextFunction) => {
+		if (req.headers["x-forwarded-proto"] !== "https") {
+			return res.redirect(301, `https://${req.headers.host}${req.url}`);
+		}
+		next();
+	});
+}
+
 // CORS Configuration
 const corsOptions = {
 	origin: process.env.ALLOWED_ORIGINS?.split(",") || "*", // Use ALLOWED_ORIGINS from .env
@@ -27,7 +41,19 @@ const corsOptions = {
 	credentials: true,
 };
 
-// Middleware
+/**
+ * Rate Limiting Middleware
+ * Limits each IP to 100 requests per 15 minutes.
+ * Adjust windowMs and max as needed.
+ */
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per windowMs
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+app.use(limiter);
+
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(compression());
